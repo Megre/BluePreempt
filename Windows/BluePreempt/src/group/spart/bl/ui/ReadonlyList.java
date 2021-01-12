@@ -1,7 +1,6 @@
-package group.spart.bl.app;
+package group.spart.bl.ui;
 
 import java.awt.AWTEvent;
-import java.awt.List;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 
@@ -11,7 +10,7 @@ import java.awt.event.MouseEvent;
  * @email renhao.x@seu.edu.cn
  * @version created on: Dec 28, 2020 2:28:19 PM 
  */
-public class ReadonlyList extends List {
+public class ReadonlyList extends ListView {
 	private static final long serialVersionUID = 1874750046979962238L;
 
 	public ReadonlyList() {

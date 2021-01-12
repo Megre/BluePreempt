@@ -89,7 +89,9 @@ public class BluePreempt implements InfoObserver {
 			@Override
 			public void run() {
 				// disconnect the headset on remote device
+				GUI.instance().notifyUser("disconnecting headsets on remote devices...");
 				DisconnectionState state = new RemoteDisconnector().disconnect(fMasters);
+				GUI.instance().notifyUser(state.toString());
 				
 				// try to connect the headset on local device
 //				boolean success = HeadsetConnector.connectHandsFreeService(selectedHeadset);

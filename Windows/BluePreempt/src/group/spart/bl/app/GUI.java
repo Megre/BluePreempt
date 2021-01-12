@@ -9,27 +9,30 @@ import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 
 import group.spart.bl.cfg.UserConfig;
-import group.spart.bl.service.SyncCallback;
 import group.spart.bl.service.remote.RemoteDeviceInfo;
+import group.spart.bl.ua.ConnectAction;
+import group.spart.bl.ua.HelpAction;
+import group.spart.bl.ua.MarkAction;
+import group.spart.bl.ua.ScanAction;
+import group.spart.bl.ui.ListView;
+import group.spart.bl.ui.OutputList;
+import group.spart.bl.ui.ReadonlyList;
 import group.spart.bl.util.Utils;
 
 import java.awt.SystemColor;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.Toolkit;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 /** 
  * 
@@ -39,48 +42,47 @@ import java.awt.event.MouseEvent;
  */
 public class GUI {
 	public static GUIOutput out;
+	public static GUI fInstance;
 	
 	private BluePreempt fBluePreempt;
-	private WorkingState fWorkingState = new WorkingState();
-	private UserConfig fUserConfig = new UserConfig(Envioronment.CfgFilePath);
+	private UserConfig fUserConfig;
 	
 	// component
 	private JFrame frmBluepreempt;
-	private List fHeadsetList;
-	private List fOutputList;
-	private List fMasterList;
+	private ListView fHeadsetList;
+	private ListView fOutputList;
+	private ListView fMasterList;
 	private JLabel fCurrentDevice;
 
 	private DisplayListDataBinding fListDataBinding;
+	private final ExecutorService fExecutor = Executors.newCachedThreadPool();
 	
-	private final String fTaskIdConnectOrRefresh = "connect or refresh";
+	/**
+	 * Create the application.
+	 */
+	public GUI() {
+		fInstance = this;
+		fUserConfig = new UserConfig(Envioronment.CfgFilePath);
+		
+		initialize();
+	}
 	
 	/**
 	 * Launch the application.
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					GUI window = new GUI();
-					window.setup();
-					window.frmBluepreempt.setVisible(true);
-					window.process();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+		EventQueue.invokeLater(() -> {
+			try {
+				GUI window = new GUI();
+				window.setup();
+				window.frmBluepreempt.setVisible(true);
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		});
 	}
 
-	/**
-	 * Create the application.
-	 */
-	public GUI() {
-		initialize();
-	}
-	
 	public List getHeadsetList() {
 		return fHeadsetList;
 	}
@@ -98,54 +100,27 @@ public class GUI {
 		fListDataBinding = new DisplayListDataBinding(fHeadsetList, fMasterList);
 		fBluePreempt = new BluePreempt(fListDataBinding);
 		fListDataBinding.attachObserver(fBluePreempt);
-	}
-	
-	private void process() {
-		EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				java.util.List<RemoteDeviceInfo> savedDevices = fUserConfig.getSavedDevices();
-				if(savedDevices.size() == 0) searchDevices();
-				else {
-					out.println(savedDevices.size() + " cached devices loaded");
-					updateDeviceInfo(savedDevices, fUserConfig.getMarkedDeviceIdx());
-				}
-			}
-		});
-	}
-	
-	private void searchDevices() {
-		if(fWorkingState.isBusy(fTaskIdConnectOrRefresh)) {
-			out.println("please wait...");
-			return;
-		}
 		
-		out.println("searching bluetooth devices...");
-		new Thread(new Runnable() {
-			public void run() {
-				fBluePreempt.searchDevices(new SyncCallback() {
-					@Override
-					public void invoke(boolean success, Object returnValues) {
-						@SuppressWarnings("unchecked")
-						java.util.List<RemoteDeviceInfo> infos = (java.util.List<RemoteDeviceInfo>) returnValues;
-						updateDeviceInfo(infos, -1);
-						out.println(infos.size() + " device(s) found");
-						
-						fWorkingState.finish(fTaskIdConnectOrRefresh);
-					}
-				});
-			}
-		}).start();
+		loadSavedDevices();
 	}
 	
-	private void updateDeviceInfo(java.util.List<RemoteDeviceInfo> infos, int markedIdx) {
+	private void loadSavedDevices() {
+		java.util.List<RemoteDeviceInfo> savedDevices = fUserConfig.getSavedDevices();
+		if(savedDevices.size() == 0) notifyUser("click Scan button to search bluetooth devices");
+		else {
+			notifyUser(savedDevices.size() + " cached devices loaded");
+			updateDeviceInfo(savedDevices, fUserConfig.getMarkedDeviceIdx());
+		}
+	}
+	
+	public void updateDeviceInfo(java.util.List<RemoteDeviceInfo> infos, int markedIdx) {
 		fListDataBinding.update(infos);
 		fListDataBinding.markDevice(markedIdx);
 	}
 	
 	@SuppressWarnings("unused")
  	private void detectConnectionState(java.util.List<RemoteDevice> headsets) {
-		out.println("detecting connection state...");
+		notifyUser("detecting connection state...");
 		ConcurrentHashMap<RemoteDevice, Boolean> stateMap = fBluePreempt.detectConnectionState();
 		fHeadsetList.removeAll();
 		for(int idx=0; idx<headsets.size(); ++idx) {
@@ -154,11 +129,15 @@ public class GUI {
 		}
 	}
 	
-	private RemoteDevice getSelectedDevice() {
+	public RemoteDevice getSelectedDevice() {
 		return Optional.ofNullable(fListDataBinding.getHedsetSource())
-				.filter(infos -> fHeadsetList.getSelectedIndex() >= 0)
-				.map(infos -> infos.get(fHeadsetList.getSelectedIndex()).getfDevice())
+				.filter(infos -> getSelectedIndex() >= 0)
+				.map(infos -> infos.get(getSelectedIndex()).getfDevice())
 				.orElse(null);
+	}
+	
+	public int getSelectedIndex() {
+		return fHeadsetList.getSelectedIndex();
 	}
 
 	/**
@@ -187,7 +166,7 @@ public class GUI {
 		frmBluepreempt.getContentPane().add(panel_1);
 		panel_1.setLayout(null);
 		
-		fHeadsetList = new List();
+		fHeadsetList = new ListView();
 		fHeadsetList.setBounds(10, 21, 294, 90);
 		panel_1.add(fHeadsetList);
 		
@@ -203,51 +182,19 @@ public class GUI {
 		
 		JButton btnConnect = new JButton("Connect");
 		btnConnect.setToolTipText("Connect to Selected Headset");
-		btnConnect.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				final String taskId = fTaskIdConnectOrRefresh;
-				if(fWorkingState.isBusy(taskId)) {
-					out.println("please wait...");
-					return;
-				}
-				
-				if(getSelectedDevice() == null) {
-					out.println("no headset selected");
-					return;
-				}
-				
-				out.println("connecting headset...");
-				fBluePreempt.connectHeadset(getSelectedDevice(), new SyncCallback() {
-					@Override
-					public void invoke(boolean success, Object returnValues) {
-						out.println("headset connection " 
-								+ (success?"success":"failed") 
-								+ (returnValues.toString().isEmpty()?"":(": " + returnValues.toString())));
-						fWorkingState.finish(taskId);
-					}
-				});
-			}
-		});
+		btnConnect.addActionListener(new ConnectAction());
 		btnConnect.setBounds(325, 21, 93, 23);
 		panel_1.add(btnConnect);
 		
-		JButton btnRefresh = new JButton("Refresh");
-		btnRefresh.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				searchDevices();
-			}
-		});
-		btnRefresh.setToolTipText("Detect Bluetooth Devices Around");
-		btnRefresh.setBounds(325, 87, 93, 23);
-		panel_1.add(btnRefresh);
+		JButton btnScan = new JButton("Scan");
+		btnScan.addActionListener(new ScanAction());
+		btnScan.setToolTipText("Detect Bluetooth Devices Around");
+		btnScan.setBounds(325, 87, 93, 23);
+		panel_1.add(btnScan);
 		
 		JButton btnNewButton = new JButton("Mark");
 		btnNewButton.setToolTipText("Mark the Headset that Allows Remote Mobile Phones or Computers to Preempt");
-		btnNewButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				fListDataBinding.markDevice(fHeadsetList.getSelectedIndex());
-			}
-		});
+		btnNewButton.addActionListener(new MarkAction());
 		btnNewButton.setBounds(325, 54, 93, 23);
 		panel_1.add(btnNewButton);
 		
@@ -268,21 +215,31 @@ public class GUI {
 		fCurrentDevice.setToolTipText("Current Device");
 		
 		JLabel lblNewLabel = new JLabel("");
-		lblNewLabel.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				java.net.URI uri;
-				try {
-					uri = new java.net.URI("https://github.com/megre/BluePreempt");
-					java.awt.Desktop.getDesktop().browse(uri);
-				} 
-				catch (URISyntaxException e1) { } 
-				catch (IOException e1) { }
-			}
-		});
+		lblNewLabel.addMouseListener(new HelpAction());
 		lblNewLabel.setBounds(385, 10, 32, 32);
 		lblNewLabel.setIcon(new ImageIcon(Utils.jarPath() + "/cfg/help.png"));
 		frmBluepreempt.getContentPane().add(lblNewLabel);
 
+	}
+	
+	public DisplayListDataBinding getDataBinding() {
+		return fListDataBinding;
+	}
+	
+	public void notifyUser(String message) {
+		out.println(message);
+	}
+	
+	public void execute(Runnable runnable) {
+		EventQueue.invokeLater(() -> {
+			fExecutor.execute(runnable);
+		});
+	}
+	
+	public BluePreempt getAdapter() {
+		return fBluePreempt;
+	}
+	public static GUI instance() {
+		return fInstance;
 	}
 }

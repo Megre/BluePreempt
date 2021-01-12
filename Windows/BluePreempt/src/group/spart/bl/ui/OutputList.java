@@ -1,4 +1,4 @@
-package group.spart.bl.app;
+package group.spart.bl.ui;
 
 import java.awt.Color;
 import java.awt.Graphics;
