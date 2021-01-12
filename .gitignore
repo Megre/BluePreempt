@@ -3,7 +3,16 @@
 **/.idea/**
 **/.DS_Store
 **/build
+**/release
 **/captures
 **/.externalNativeBuild
 **/.cxx
 **/local.properties
+**/.settings
+**/bin
+**/*.psd
+**/user.cfg
+**/*.jks
+**/BluePreempt.jar
+**/BluePreempt.cmd
+

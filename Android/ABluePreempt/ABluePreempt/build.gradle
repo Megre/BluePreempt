@@ -3,6 +3,20 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        release {
+        storeFile file('C:\\Users\\TF\\Documents\\GitHub\\BluePreempt\\ABluePreempt.jks')
+            storePassword 'mm98761452'
+            keyAlias 'key0'
+            keyPassword 'mm98761452'
+        }
+        debug {
+            storeFile file('C:\\Users\\TF\\Documents\\GitHub\\BluePreempt\\ABluePreempt.jks')
+            storePassword 'mm98761452'
+            keyAlias 'key0'
+            keyPassword 'mm98761452'
+        }
+    }
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
 
@@ -20,6 +34,10 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
     compileOptions {
