@@ -88,7 +88,7 @@ public class DisconnectService implements Runnable {
 				}
 				
 				// disconnect local headset and notify remote service
-				RemoteDevice connectedHeadset = fBluePreempt.getMarkedHeadset(); // getConnectedHeadset();
+				RemoteDevice connectedHeadset = fBluePreempt.getMarkedHeadset(); 
 				boolean disconnected = HeadsetConnector.disconnect(connectedHeadset.getBluetoothAddress());
 				sendNotify(streamConnection, disconnected);
 				

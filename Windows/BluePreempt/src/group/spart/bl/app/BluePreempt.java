@@ -89,7 +89,7 @@ public class BluePreempt implements InfoObserver {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				// save curent volume
+				// save current volume
 				int volume = new VolumeSetter().getVolume();
 				
 				// disconnect the headset on remote device
