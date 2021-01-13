@@ -16,6 +16,7 @@ import group.spart.bl.service.local.DeviceType;
 import group.spart.bl.service.local.DisconnectService;
 import group.spart.bl.service.local.HeadsetConnectionDetector;
 import group.spart.bl.service.local.HeadsetConnector;
+import group.spart.bl.service.local.VolumeSetter;
 import group.spart.bl.service.remote.DisconnectServiceDiscovery;
 import group.spart.bl.service.remote.DisconnectionState;
 import group.spart.bl.service.remote.RemoteDisconnector;
@@ -88,6 +89,9 @@ public class BluePreempt implements InfoObserver {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
+				// save curent volume
+				int volume = new VolumeSetter().getVolume();
+				
 				// disconnect the headset on remote device
 				GUI.instance().notifyUser("disconnecting headsets on remote devices...");
 				DisconnectionState state = new RemoteDisconnector().disconnect(fMasters);
@@ -97,11 +101,12 @@ public class BluePreempt implements InfoObserver {
 //				boolean success = HeadsetConnector.connectHandsFreeService(selectedHeadset);
 				
 				boolean success = (state == DisconnectionState.Disconnected);
-				if(success && selectedHeadset != null) {
+				if(success) {
+					GUI.instance().notifyUser("connecting headset...");
 					success = HeadsetConnector.connect(selectedHeadset.getBluetoothAddress());
 				}
 				
-				callback.invoke(success, state);
+				callback.invoke(success, volume);
 			}
 			
 		}).start();

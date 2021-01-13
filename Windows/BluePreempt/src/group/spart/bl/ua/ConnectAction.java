@@ -7,6 +7,7 @@ import javax.bluetooth.RemoteDevice;
 
 import group.spart.bl.app.GUI;
 import group.spart.bl.service.SyncCallback;
+import group.spart.bl.service.local.VolumeSetter;
 
 /** 
  * 
@@ -38,7 +39,10 @@ public class ConnectAction extends UserAction implements ActionListener  {
 		GUI.instance().getAdapter().connectHeadset(headset, new SyncCallback() {
 			@Override
 			public void invoke(boolean success, Object returnValues) {
-				notifyUser("headset connection " + (success?"success":"failed"));
+				if(success) {
+					new VolumeSetter().setVolume((Integer) returnValues);
+				}
+				notifyUser((success?"connected":"connection failed"));
 				finish();
 			}
 		});

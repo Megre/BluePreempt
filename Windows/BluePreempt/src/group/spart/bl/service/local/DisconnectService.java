@@ -15,6 +15,7 @@ import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
 
 import group.spart.bl.app.BluePreempt;
+import group.spart.bl.app.GUI;
 import group.spart.bl.service.AssignedUUIDs;
 import group.spart.bl.service.ServiceState;
 import group.spart.bl.service.remote.DisconnectionState;
@@ -77,11 +78,11 @@ public class DisconnectService implements Runnable {
 			try {
 				streamConnection = fNotifier.acceptAndOpen(); // block and wait
 				
-				System.out.println("disconnecting local headset...");
+				GUI.instance().notifyUser("headset disconnection request accepted");
 				
 				// get marked headset
 				if(fBluePreempt.getMarkedHeadset() == null) {
-					System.out.println("  > no marked headset found");
+					GUI.instance().notifyUser("no headset marked. Please mark a headset that allows remote devices to disconnect");
 					sendNotify(streamConnection, false);
 					continue;
 				}
@@ -90,9 +91,8 @@ public class DisconnectService implements Runnable {
 				RemoteDevice connectedHeadset = fBluePreempt.getMarkedHeadset(); // getConnectedHeadset();
 				boolean disconnected = HeadsetConnector.disconnect(connectedHeadset.getBluetoothAddress());
 				sendNotify(streamConnection, disconnected);
-				streamConnection.close();
 				
-				System.out.println("  > disconnection " + (disconnected?"success":"failed"));
+				GUI.instance().notifyUser("headset disconnected");
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -104,6 +104,7 @@ public class DisconnectService implements Runnable {
 		OutputStream outputStream = streamConnection.openOutputStream();
 		outputStream.write((disconnected?DisconnectionState.Disconnected:DisconnectionState.Failed).toString().getBytes());
 		outputStream.close();
+		streamConnection.close();
 	}
 	
 	@SuppressWarnings("unused")
