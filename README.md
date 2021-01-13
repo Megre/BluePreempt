@@ -15,6 +15,12 @@ Windows / Android clients are quite similar. The functions are performed with th
 2. Select and **Mark** the bluetooth headset that allows other devices to disconnect.
 3. **Connect** to the headset on the computer / phone in use.
 
+
+
+### Dependence
+
+##### Android Client
+
 The Android client needs the following permissions:
 
 - Bluetooth Permission
@@ -22,3 +28,10 @@ The Android client needs the following permissions:
 - GPS service
 
 Please add ABluePreempt to **Battery Optimization Whitelist** in order to respond to remote requests in background.
+
+##### Windows Client
+
+The Windows client depends on:
+
+- [Bluetooth Command Line Tools](http://bluetoothinstaller.com/bluetooth-command-line-tools/). Please install this tool and select the `add to the system PATH` option during the installation.
+- [JRE 8 (Windows x86)](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html). Please install JRE version 8 (minimal) and [configure the system PATH](https://docs.oracle.com/javase/tutorial/essential/environment/paths.html).
