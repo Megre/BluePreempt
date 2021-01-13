@@ -26,7 +26,7 @@ public class ConfigItemsWriter {
 		if(fConfigItems.size() == 0) return;
 		
 		try {
-			BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(fSavePath)));
+			BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(makeFile(fSavePath)));
 			for(ConfigItem item: fConfigItems) {
 				bufferedWriter.write(item.toString());
 			}
@@ -34,5 +34,16 @@ public class ConfigItemsWriter {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private File makeFile(String filePath) throws IOException {
+		File cfgFile = new File(fSavePath);
+		if(cfgFile.exists()) return cfgFile;
+		
+		if(cfgFile.getParentFile() != null) {
+			cfgFile.getParentFile().mkdirs();
+		}
+		cfgFile.createNewFile();
+		return cfgFile;
 	}
 }

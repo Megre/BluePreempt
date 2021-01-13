@@ -53,6 +53,8 @@ public class DisconnectionService extends Service implements Runnable {
             try {
                 OutputStream outputStream = fSocket.getOutputStream();
                 outputStream.write("done".getBytes());
+                outputStream.flush();
+                outputStream.close();
                 fSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();

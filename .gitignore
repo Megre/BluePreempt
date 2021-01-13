@@ -15,4 +15,6 @@
 **/*.jks
 **/BluePreempt.jar
 **/BluePreempt.cmd
-
+/Windows/**/BluePreempt.exe
+/Windows/**/BluePreempt.exe4j
+/Windows/**/error.log

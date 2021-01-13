@@ -103,6 +103,7 @@ public class DisconnectService implements Runnable {
 	private void sendNotify(StreamConnection streamConnection, boolean disconnected) throws IOException {
 		OutputStream outputStream = streamConnection.openOutputStream();
 		outputStream.write((disconnected?DisconnectionState.Disconnected:DisconnectionState.Failed).toString().getBytes());
+		outputStream.flush();
 		outputStream.close();
 		streamConnection.close();
 	}
