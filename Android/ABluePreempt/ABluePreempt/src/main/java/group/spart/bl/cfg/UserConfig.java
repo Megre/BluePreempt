@@ -14,9 +14,13 @@ import group.spart.bl.service.remote.RemoteDeviceInfo;
  */
 public class UserConfig {
 
-	private String fCfgPath;
-	private final String fDeviceItemName = "device";
-	private List<ConfigItem> fConfigItems;
+	private final String DEVICE_ITEM_NAME = "device";
+	private final String MARK_ITEM_NAME = "mark";
+	private final String STATE_ITEM_NAME = "state";
+
+	private final String fCfgPath;
+	private final List<ConfigItem> fConfigItems;
+	private boolean fFirstRun = true;
 	private int fMarkedInx = -1;
 
 	public UserConfig(String cfgPath) {
@@ -25,20 +29,24 @@ public class UserConfig {
 	}
 	
 	public List<RemoteDeviceInfo> getSavedDevices() {
-		List<RemoteDeviceInfo> deviceInfos = new ArrayList<RemoteDeviceInfo>();
+		List<RemoteDeviceInfo> deviceInfos = new ArrayList<>();
 		for(int idx=0; idx<fConfigItems.size(); ++idx) {
 			ConfigItem item = fConfigItems.get(idx);
 			SimpleConfigItem simpleItem = (SimpleConfigItem) item;
-			if("device".equals(simpleItem.getItemName()) && fDeviceItemName.equals(simpleItem.getItemName())) {
+			if(DEVICE_ITEM_NAME.equals(simpleItem.getItemName())) {
 				deviceInfos.add(new RemoteDeviceInfo(getDeviceName(simpleItem), 
 						getDeviceAddress(simpleItem),
 						getDeviceType(simpleItem)));
 			}
-			else if("mark".equals(simpleItem.getItemName())) {
+			else if(MARK_ITEM_NAME.equals(simpleItem.getItemName())) {
 				try {
-					fMarkedInx = Integer.valueOf(item.getValue("index"));
+					fMarkedInx = Integer.parseInt(item.getValue("index"));
 				}
-				catch(NumberFormatException e) { }
+				catch(NumberFormatException e) { e.printStackTrace(); }
+			}
+			else if(STATE_ITEM_NAME.equals(simpleItem.getItemName())) {
+				fFirstRun = ("true".equals(item.getValue("firstRun")));
+				System.out.println("first run: " + fFirstRun);
 			}
 		}
 		return deviceInfos;
@@ -59,27 +67,39 @@ public class UserConfig {
 	public String getDeviceAddress(ConfigItem item) {
 		return item.getValue("address");
 	}
+
+	public boolean isFirstRun() {
+		return fFirstRun;
+	}
 	
 	public void saveConfig(DisplayListDataBinding dataBinding) {
+		// devices
 		List<RemoteDeviceInfo> headsetInfos = dataBinding.getHeadsetSource();
 		List<RemoteDeviceInfo> masterInfos = dataBinding.getMasterSource();
 		
-		List<ConfigItem> configItems = new ArrayList<ConfigItem>();
+		List<ConfigItem> configItems = new ArrayList<>();
 		for(RemoteDeviceInfo deviceInfo: headsetInfos) {
 			configItems.add(newCongitem(deviceInfo));
 		}
 		for(RemoteDeviceInfo deviceInfo: masterInfos) {
 			configItems.add(newCongitem(deviceInfo));
 		}
-		
-		ConfigItem markItem = new SimpleConfigItem("mark");
+
+		// mark
+		ConfigItem markItem = new SimpleConfigItem(MARK_ITEM_NAME);
 		markItem.addItem("index", new SingleValue(String.valueOf(dataBinding.getMarkedDeviceIdx())));
 		configItems.add(markItem);
+
+		// state
+		ConfigItem stateItem = new SimpleConfigItem(STATE_ITEM_NAME);
+		stateItem.addItem("firstRun", new SingleValue("false"));
+		configItems.add(stateItem);
+
 		new ConfigItemsWriter(configItems, fCfgPath).write();
 	}
 	
 	private ConfigItem newCongitem(RemoteDeviceInfo deviceInfo) {
-		ConfigItem item = new SimpleConfigItem(fDeviceItemName);
+		ConfigItem item = new SimpleConfigItem(DEVICE_ITEM_NAME);
 		item.addItem("name", new SingleValue(deviceInfo.getName()));
 		item.addItem("address", new SingleValue(deviceInfo.getAddress()));
 		item.addItem("type", new SingleValue(deviceInfo.getType().toString()));

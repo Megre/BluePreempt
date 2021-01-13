@@ -1,7 +1,6 @@
 package group.spart.abl.app;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -27,9 +26,9 @@ public class PermissionChecker {
     }
 
     public void checkPermissions() {
-        // ignore battery optimizations
+        // battery optimization
         if(!isIgnoringBatteryOptimizations()) {
-            requestIgnoreBatteryOptimizations();
+            fActivity.notifyUser("ABluePreempt is not in Battery Optimization Whitelist, thus may not response to remote request");
         }
 
         // location permissions
@@ -77,31 +76,35 @@ public class PermissionChecker {
 
     private void navigateToGPSSettings() {
         new AlertDialog.Builder(fActivity)
-                .setTitle("Please Open GPS")
-                .setMessage("Location service is needed to scan bluetooth devices")
+                .setTitle("Open GPS Service")
+                .setMessage("GPS service is needed to scan bluetooth devices.")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Settings",
                         (dialog, which) -> {
                             Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                             fActivity.startActivity(intent);
                         })
-                .setCancelable(false)
                 .show();
     }
 
-    private boolean isIgnoringBatteryOptimizations() {
+    public boolean isIgnoringBatteryOptimizations() {
         PowerManager powerManager = (PowerManager) fActivity.getSystemService(Context.POWER_SERVICE);
         return powerManager != null
                 && powerManager.isIgnoringBatteryOptimizations(fActivity.getPackageName());
     }
 
-    private void requestIgnoreBatteryOptimizations() {
-        try {
-            @SuppressLint("BatteryLife") Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-            intent.setData(Uri.parse("package:" + fActivity.getPackageName()));
-            fActivity.startActivity(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void navigateToAppDetailsSettings() {
+        new AlertDialog.Builder(fActivity)
+                .setTitle("Add to Battery Optimization Whitelist")
+                .setMessage("Ignore battery optimization to serve remote request in background. " +
+                        "You can terminate ABluePreempt at anytime.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Settings",
+                        (dialog, which) -> {
+                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            intent.setData(Uri.parse("package:" + fActivity.getPackageName()));
+                            fActivity.startActivity(intent);
+                        })
+                .show();
     }
 }

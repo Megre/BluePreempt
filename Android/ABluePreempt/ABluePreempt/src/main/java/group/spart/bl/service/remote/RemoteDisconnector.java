@@ -5,19 +5,22 @@ import android.bluetooth.BluetoothSocket;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import group.spart.abl.app.MainActivity;
 import group.spart.bl.service.SyncCallback;
-import group.spart.bl.service.local.DisconnectService;
+import group.spart.bl.service.local.DisconnectionAdapter;
+import group.spart.bl.service.local.DisconnectionService;
 
 public class RemoteDisconnector {
     private CountDownLatch fLatch;
     private boolean fSuccess = false;
+    private byte[] fInputCache;
 
     public RemoteDisconnector() {
-
+        fInputCache = new byte[1024];
     }
 
     public void disconnect(BluetoothDevice[] bluetoothDevices, SyncCallback callback) {
@@ -56,15 +59,14 @@ public class RemoteDisconnector {
         public void run() {
             BluetoothSocket socket = null;
             try{
-                UUID serviceUUID = DisconnectService.DISCONNECT_SERVICE_UUID;
+                UUID serviceUUID = DisconnectionService.DISCONNECT_SERVICE_UUID;
                 System.out.println("connecting socket uuid: " + serviceUUID); // 这里应该是服务的uuid
                 socket = fDevice.createRfcommSocketToServiceRecord(serviceUUID);
                 if (!socket.isConnected()){
                     socket.connect();
                     InputStream inputStream = socket.getInputStream();
-                    byte[] bytes = new byte[1024];
-                    final int readLength = inputStream.read(bytes);
-                    System.out.println("read: " + new String(bytes) + ", " + readLength);
+                    final int readLength = inputStream.read(fInputCache);
+                    System.out.println("read: " + new String(fInputCache, 0, readLength));
                     synchronized (RemoteDisconnector.this) {
                         if(!fSuccess) fSuccess = true;
                     }

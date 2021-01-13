@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +24,7 @@ import group.spart.abl.ui.DisplayList;
 import group.spart.abl.ui.TextViewAdapterFactory;
 import group.spart.bl.app.DisplayListDataBinding;
 import group.spart.bl.cfg.UserConfig;
-import group.spart.bl.service.local.DisconnectService;
+import group.spart.bl.service.local.DisconnectionAdapter;
 import group.spart.bl.service.remote.RemoteDevice;
 import group.spart.bl.service.remote.RemoteDeviceInfo;
 
@@ -70,6 +71,11 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == PermissionChecker.REQUEST_CODE_LOCATION) {
             fChecker.dealWithGrantedPerms(permissions, grantResults);
         }
+
+        if(fUserConfig.isFirstRun() && !fChecker.isIgnoringBatteryOptimizations()) {
+            fChecker.navigateToAppDetailsSettings();
+        }
+
     }
 
     @Override
@@ -100,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.tvCurrentDevice)).setText(BluetoothAdapter.getDefaultAdapter().getName());
 
         // start disconnection service
-        execute(new DisconnectService(this));
+        new DisconnectionAdapter().startService();
 
         // user action
         findViewById(R.id.btnConnect).setOnClickListener(new ConnectAction());
@@ -133,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
         fMessageHandler.notifyUser(message);
     }
 
-    public void updateDisplay(java.util.List<RemoteDeviceInfo> infoList) {
+    public void updateDisplay(List<RemoteDeviceInfo> infoList) {
         fMessageHandler.updateDisplay(infoList);
     }
 
