@@ -1,7 +1,6 @@
 package group.spart.bl.app;
 
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.bluetooth.RemoteDevice;
 import java.awt.List;
@@ -11,6 +10,7 @@ import javax.swing.border.TitledBorder;
 import group.spart.bl.cfg.UserConfig;
 import group.spart.bl.service.remote.RemoteDeviceInfo;
 import group.spart.bl.ua.ConnectAction;
+import group.spart.bl.ua.FrameAction;
 import group.spart.bl.ua.HelpAction;
 import group.spart.bl.ua.MarkAction;
 import group.spart.bl.ua.ScanAction;
@@ -30,8 +30,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+
 import java.awt.Toolkit;
 
 /** 
@@ -146,13 +145,7 @@ public class GUI {
 	private void initialize() {
 		frmBluepreempt = new JFrame();
 		frmBluepreempt.setIconImage(Toolkit.getDefaultToolkit().getImage(Utils.jarPath() + "/cfg/logo.png"));
-		frmBluepreempt.addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent e) {
-				fUserConfig.saveConfig(fListDataBinding);
-				System.exit(0);
-			}
-		});
+		frmBluepreempt.addWindowListener(new FrameAction());
 		frmBluepreempt.setTitle("BluePreempt");
 		frmBluepreempt.getContentPane().setBackground(SystemColor.control);
 		frmBluepreempt.setResizable(false);
@@ -222,6 +215,14 @@ public class GUI {
 
 	}
 	
+	public JFrame getMainFrame() {
+		return frmBluepreempt;
+	}
+	
+	public void saveUserConfig() {
+		fUserConfig.saveConfig(fListDataBinding);
+	}
+	
 	public DisplayListDataBinding getDataBinding() {
 		return fListDataBinding;
 	}
@@ -239,6 +240,7 @@ public class GUI {
 	public BluePreempt getAdapter() {
 		return fBluePreempt;
 	}
+	
 	public static GUI instance() {
 		return fInstance;
 	}
